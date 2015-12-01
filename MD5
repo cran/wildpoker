@@ -1,0 +1,17 @@
+cee5723b57e3317cc7143e1442a197e3 *DESCRIPTION
+7b88aff02191fc3afd02e38c166e2c8c *NAMESPACE
+462356cff38bab6daab042940423c68a *R/deck.R
+15b3822ce6f6ee4378d700202bdee738 *R/hand.R
+95be08e341f77084d2762b750aac14b0 *R/stats.R
+f3df4d50656828aa2f8e57c53bfbdaa1 *R/sysdata.rda
+9ad48d86b4843e9d7e02f7295623f226 *build/partial.rdb
+0b6f5853be3ce39ac9196d292c893b93 *data/wpnotsupported.RData
+2127cf22d4e34f99a72867411c164701 *data/wpsupportedgames.RData
+737f0c9c699c5f93beca9306b94f87b6 *man/figures/graphftq.png
+495f3c8d2e7bd866bf6b96bbf7bb6afc *man/figures/graphhcdp.png
+c8f43c790722bedb1f6551af5cff1764 *man/wildpoker-package.Rd
+999ad84fddaf948d6ff44d810a1897c4 *man/wpgame.Rd
+6e4ec583ed36cc8317966c5147c0586e *man/wpgraphs.Rd
+b44e17cce94a151c48118ec08b309457 *man/wpnotsupported.Rd
+56c724c926eac1c818c86e38289100ed *man/wpstats.Rd
+c55506ba0c9f338afffeb29e6d712ce1 *man/wpsupportedgames.Rd

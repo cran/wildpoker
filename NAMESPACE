@@ -1,0 +1,4 @@
+export("wpgame", "wpstats", "wpgraphs")
+importFrom("grDevices", "heat.colors", "rainbow")
+importFrom("graphics", "abline", "barplot", "legend", "par", "text")
+importFrom("utils", "str")
