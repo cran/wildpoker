@@ -6,9 +6,7 @@
   This data set shows all supported games (in the rownames) and a brief
   description of each game.  
 
-In the "Misc" column, games listed in parentheses are different
-  only in terms of holecards or bidding strategy and can be considered
-  identical for the purposes of these game stats
+  For a better formated description of an individual game, use \code{\link{wprules}}
 }
 \usage{wpsupportedgames}
 \format{
@@ -63,5 +61,5 @@ If using \bold{wpgraphs} directly, \bold{Dangerous Queens} would use the number 
 \href{http://www.poker.com/game/index.htm}{poker.com} has an excellent reference on game variants which was the 
 primary source for games rules not encountered in my own play.
 }
-\seealso{\code{\link{wpnotsupported}}}
+\seealso{\code{\link{wprules}}, \code{\link{wpnotsupported}}}
 \keyword{datasets}

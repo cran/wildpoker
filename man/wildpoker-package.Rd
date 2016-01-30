@@ -4,7 +4,6 @@
 \docType{package}
 \title{
 \packageTitle{wildpoker}
-Best Hand Analysis for Poker Variants Including Wildcards
 }
 \description{
 \packageDescription{wildpoker}
@@ -27,6 +26,7 @@ The DESCRIPTION file:
 This package is organized into three specfic functions and two data elements
   \itemize{
     \item \code{\link{wpgame}}  - Play a poker variant, see who won, game-level stats
+    \item \code{\link{wprules}} - Display rules of a poker variant
     \item \code{\link{wpstats}} - Deal many games of a poker variant, capture statistics
     \item \code{\link{wpgraphs}} - Plot data from wpstats output into useful graphs
     \item \code{\link{wpsupportedgames}} - lists all supported games & basic description of each

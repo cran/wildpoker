@@ -469,13 +469,14 @@ iwpmakehand <- function(hand, ngame, split=FALSE) {
 
   ######################
   # Validate parameters
-  
-  if (sum(rownames(iwpgames) == ngame) != 1) {
+  sgame <- iwpsupportedgames[ngame,]$Stats.Game
+  sgame <- ifelse(is.na(sgame),ngame, sgame)
+  if (sum(rownames(iwpgames) == sgame) != 1) {
     print(c("Supported Games:"))
-    print(rownames(iwpgames))
+    print(sort(rownames(iwpsupportedgames)))
     stop(c("ngame parameter: ", ngame, " is not supported"))
   } else {
-    game <- iwpgames[ngame, ] 
+    game <- iwpgames[sgame, ] 
   } # end game parameter validation check
   if (!((sum(names(hand) == names(iwpstddeck)) 
          == dim(iwpstddeck)[2]))) {
@@ -550,16 +551,16 @@ iwpmakehand <- function(hand, ngame, split=FALSE) {
           if (length(shand[shand$numval == 14, ]$numval) > 0) {
             shand[shand$numval == 14, ]$numval <- 1
           } # end ace = 1
-          hmin <- "-Spots"
+          hmin <- "+Spots"
         } else {       
           # sum by suit
           if (length(grep(hmin, c("D","S","C","H")) > 0)) {
             shand <- hand[hand$suit == hmin | hand$suit == "W", ]
-            hmin <- paste("-", hmin,  sep="")
+            hmin <- paste("+", hmin,  sep="")
           # sum everything
           } else {
             shand <- hand
-            hmin <- "-Sum"
+            hmin <- "+Sum"
           } # end filter by suit check
           # wildcards count as aces
           if (sum(shand$suit == "W") > 0) {
@@ -569,9 +570,18 @@ iwpmakehand <- function(hand, ngame, split=FALSE) {
         } # end filter by Spot check
         if (dim(shand)[1] > 0) {
           rval <- sum(shand$numval)
+          if (rval < 10) {
+            rtyp <- as.character(rval)
+          } else {
+            if (rval == 70 & hmin == "+Spots") {
+              rtyp <- "60"
+            } else {
+              rtyp <- paste(substr(as.character(rval),1,1),"0", sep="")
+            } # end maximum value for spots check
+          } # end set rtyp
           rhand <- ifelse(shand$suit != "W", rownames(shand),
                           paste(rownames(shand), "w", sep=""))
-          rname <- paste(as.character(rval), hmin, sep="")
+          rname <- paste(as.character(rtyp), hmin, sep="")
         } # end check hand has at least one card
       }, # end hmod = Sum logic
       ###########

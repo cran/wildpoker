@@ -187,13 +187,14 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
 
   ############################################################# 
   # Validate parameters
-
-  if (sum(rownames(iwpgames) == ngame) != 1) {
+  sgame <- iwpsupportedgames[ngame,]$Stats.Game
+  sgame <- ifelse(is.na(sgame),ngame, sgame)
+  if (sum(rownames(iwpgames) == sgame) != 1) {
     print(c("Supported Games:"))
-    print(rownames(iwpgames))
+    print(sort(rownames(iwpsupportedgames)))
     stop(c("ngame parameter: ", ngame, " is not supported"))
   } else {
-    game <- iwpgames[ngame, ] 
+    game <- iwpgames[sgame, ] 
   } # end game parameter validation check
 
   if (is.na(as.integer(players)) | as.integer(players) <= 1) {
@@ -211,7 +212,8 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
   } # end players parameter validation check 
  
   if (is.na(as.integer(drounds)) | as.integer(drounds) < 1)  {
-    stop(c("drounds (dealing rounds) parameter: ", drounds, " must be number >= 1"))
+    stop(c("drounds (dealing rounds) parameter: ", 
+                     drounds, " must be number >= 1"))
   } # end betting rounds parameter validation check
 
   # Enforce the Fixed Wildcards parameter game$wcfix
@@ -362,8 +364,8 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
             ppair <- FALSE
             for (j in length(plup):2) {
               if (length(grep(plup[j], plup)) > 1) {
-                if (j < length(plup)) {
-                  mcard <- upcards[players*j + i]
+                if (players*j < uploc) {
+                  mcard <- upcards[players*j + 1]
                 } # end last card up check
                 ppair <- TRUE
               } # end pair in hand
@@ -377,8 +379,8 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
           if (game$wccard == "Match") {
             for (i in uploc:(players+1)) {
               if (length(grep(upcards[i], upcards)) > 1) {
-                if (i + players <= uploc) {
-                  mcard <- upcards[i + players]
+                if (i + 1 <= uploc) {
+                  mcard <- upcards[i + 1]
                 } # end last card up check
                 break
               } # end match upcard
@@ -388,8 +390,8 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
             cardlocs <- grep(game$wccard, upcards)
             if (sum(cardlocs) > 0 ) {
               lastcard <- cardlocs[length(cardlocs)]
-              if (lastcard < uploc-players + 1) {
-                mcard <- upcards[lastcard + players]
+              if (lastcard < uploc - 1 ) {
+                mcard <- upcards[lastcard + 1]
               } # end card at end test
             } # end follow Card logic
           } # end follow Match test
@@ -405,12 +407,23 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
       switch(game$wctype,
        ##########
         "Card" = {
-          pwclist <- namevals(rownames(deck[replicate(players,
-                     as.numeric(game$wccard)) * 1:players, ]))
           wclist <- NULL
-          for (i in 1:length(pwclist)) {
+          for (i in 1:players) {
             phand <- rownames(deck[deck$hand == paste("P", i, sep=""), ])
-            wclist <- c(wclist, phand[grep(pwclist[i], phand)])
+            pwcval <- namevals(phand[as.numeric(game$wccard)])
+            wclist <- c(wclist, phand[grep(pwcval, phand)])
+          } # end loop through players
+          deck[wclist, 1:2] <- "W" 
+        }, # end Hand Card logic
+        "Pick" = {
+          wclist <- NULL
+          for (i in 1:players) {
+            phand <- rownames(deck[deck$hand == paste("P", i, sep=""), ])
+            pwpick <- table(as.numeric(namevals(
+                            phand[1:as.numeric(game$wccard)], "Values")))
+            pwcval <- valface(min(as.numeric(names(
+                            pwpick[pwpick == max(pwpick)]))))
+            wclist <- c(wclist, phand[grep(pwcval, phand)])
           } # end loop through players
           deck[wclist, 1:2] <- "W" 
         }, # end Hand Card logic
@@ -425,10 +438,13 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
             pwild <- sort(as.numeric(namevals(phole, "Values")))[1]
             # Match means that the low card in the hole must
             # match at least one other card in hand or nothing is wild. 
-            if (game$wccard == "Low" | (game$wccard == "Match" & 
+            if (substr(game$wccard,1,3) == "Low" | (game$wccard == "Match" & 
                 length(grep(valface(pwild), phand)) > 1)) {
               wclist <- c(wclist, phand[grep(valface(pwild), phand)])
-            } # end Match check     
+            } # end Match check 
+            if (game$wccard == "Low or K" & length(grep("K", phole)) > 0) {
+              wclist <- c(wclist, phole[grep("K", phole)])
+            } # end low or king in hole check    
           } # end loop through players
           deck[wclist, 1:2] <- "W" 
         }  # end Hand Hole Card logic
@@ -436,7 +452,7 @@ iwpdeal <- function(ngame, players, wcards = NULL, drounds = 5, deck = NULL) {
     } # end Hand wildcard logic
   } # end Global wildcard logic
 
-  ###################################################################
+  ##############################################################################
   # Enforce logic from extra fixed cards
   if (strsplit(game$erule, " ")[[1]][1] == "Fixed") {
     # Good Bad Ugly logic postprocessor
@@ -570,13 +586,14 @@ iwpshowdown <- function(deck, ngame) {
 
   ######################
   # Validate parameters
-
-  if (sum(rownames(iwpgames) == ngame) != 1) {
+  sgame <- iwpsupportedgames[ngame,]$Stats.Game
+  sgame <- ifelse(is.na(sgame),ngame, sgame)
+  if (sum(rownames(iwpgames) == sgame) != 1) {
     print(c("Supported Games:"))
-    print(rownames(iwpgames))
+    print(sort(rownames(iwpsupportedgames)))
     stop(c("ngame parameter: ", ngame, " is not supported"))
   } else {
-    game <- iwpgames[ngame, ] 
+    game <- iwpgames[sgame, ] 
   } # end game parameter validation check
   if (!((sum(names(deck) == names(iwpstddeck)) == dim(iwpstddeck)[2]))) {
     print("Structure of deck parameter")
@@ -652,14 +669,14 @@ iwpshowdown <- function(deck, ngame) {
     ##############################
     # Build the player hands   
     pmhand <- deck[deck$hand %in% c(pnam[i], "PC"), ]
-    if (ngame == "Good Bad Ugly" ) {
+    if (sgame == "Good Bad Ugly" ) {
       if (length(grep("Ugly", pnam[i])) > 0) {
         sdown[i, c("maintype", "mainhand")] <- c("NoHand", "Folded")
         sdown[i, c("splittype", "splithand")] <- c("None", "")
         next
       } # end ugly logic
     } # end Good Bad Ugly game logic
-    if (ngame %in% c("Baseball", "Good Bad Ugly") ) {
+    if (sgame %in% c("Baseball", "Good Bad Ugly") ) {
       phidx <- matrix(1:length(pmhand$value), nrow = 1, byrow = TRUE)
     } # end variable hand size logic
     pshand <- pmhand
@@ -675,7 +692,7 @@ iwpshowdown <- function(deck, ngame) {
 # assign("debughand", pmhand[phidx[j, ], ], envir = .GlobalEnv)
 #################
       mainhand <- iwpmakehand(pmhand[phidx[j, ], ], 
-                             ngame, split = FALSE)
+                             sgame, split = FALSE)
       if (((as.numeric(mainhand[1]) * mhl) >= 
            (as.numeric(sdown[i,"mainscore"]) * mhl)) |
           (mainhand[1] != "0" & sdown[i,"mainscore"] == 0)) {
@@ -683,7 +700,7 @@ iwpshowdown <- function(deck, ngame) {
       } # end set main showdown hand
       if (game$split != "None") {
         splithand <- iwpmakehand(pshand[phidx[j, ], ], 
-                                 ngame, split = TRUE)
+                                 sgame, split = TRUE)
         if (((as.numeric(splithand[1]) * shl) >= 
              (as.numeric(sdown[i,"splitscore"]) * shl)) |
             (splithand[1] != "0" & sdown[i,"splitscore"] == 0)) {
@@ -710,6 +727,14 @@ iwpshowdown <- function(deck, ngame) {
     sdown$maintype <- "Redeal"
     sdown$mainscore <- 0
   } # end redeal if QS is up logic
+  if (game$redeal == "No Follow Up" & 
+      (sum(substr(deck$hand,1,1) == "P" 
+           & deck$holec == FALSE 
+           & substr(rownames(deck),1,1) == game$wccard
+       ) == 0)) {
+    sdown$maintype <- "Redeal"
+    sdown$mainscore <- 0
+  } # end redeal if no Queens are up logic
   ####################
   # Score the winner(s)
   sdown$mainscore <- as.numeric(sdown$mainscore)

@@ -1,8 +1,41 @@
+##################################################################################
+wprules <- function(ngame) {
+  #  This function "plays" an entire poker game, from shuffling the deck
+  #  to the showdown. It collects extra statistics on the game itself and
+  #  stores everything in a single $summary" vector for use by wpstats
+  #
+  #  Args:
+  #    ngame:   any value from rownames(wpsupportedgames) 
+  #
+  #  Returns: prints the following output to the display device 
+  #    (wsg, below = wpsupportedgames)
+  #    GAME :  ngame (wsg$Game.Type, max players = wsg$Max.Players)}
+  #    DEAL :  wsg$Deal
+  #    BETS :  wsg$Bet
+  #    WILD :  wsg$Wildcards
+  #    MAIN :  wsg$Main.Hand
+  #    SPLIT:  wsg$Split.Hand
+  #    NOTES:  wsg$Notes
+  #
+  wsg <- iwpsupportedgames[ngame, ]
+  if (rownames(wsg) == "NA") {
+    print(c("Supported Games:"))
+    print(sort(rownames(iwpsupportedgames)))
+    stop(c("ngame parameter: ", ngame, " is not supported"))
+  } # end game parameter validation check
+  rv1 <- paste("GAME : ", ngame, " (", wsg$Game.Type, ", max players = ",
+              wsg$Max.Players, ")", " \n", sep="")
+  rv2 <- paste("DEAL : ", wsg$Deal, " \n", sep="")
+  rv3 <- paste("BETS : ", wsg$Bet,  " \n", sep="")
+  rv4 <- paste("WILD : ", wsg$Wildcards, " \n", sep="")
+  rv5 <- paste("MAIN : ", wsg$Main.Hand, " \n", sep="")
+  rv6 <- paste("SPLIT: ", wsg$Split.Hand, " \n", sep="")
+  rv7 <- paste("NOTES: ", wsg$Notes, " \n", sep="")
+  cat(rv1, "\n", rv2, "\n", rv3, "\n", rv4, "\n", 
+      rv5, "\n", rv6, "\n", rv7, sep="")
+} # end of external function wprules
 
-
-
-################################################################################## 
-
+##################################################################################
 wpgame <- function(ngame, players, wcards = NULL) {
   #  This function "plays" an entire poker game, from shuffling the deck
   #  to the showdown. It collects extra statistics on the game itself and
@@ -168,7 +201,7 @@ wpgame <- function(ngame, players, wcards = NULL) {
 
 
 
-handstats <- function(rawstat, split = FALSE) {
+iwphandstats <- function(rawstat, split = FALSE) {
   # Utility function to create labels for reporting grouping
   #
   # Args:
@@ -212,7 +245,7 @@ handstats <- function(rawstat, split = FALSE) {
     if (hmin == "Spots") {
       # There is no such thing as a failure to win in spots
       # and the best hand is 70 points (7 cards 10 value each)
-       hlabel <- hlabel[!(hlabel %in% c("80+", "90+"))]
+       hlabel <- hlabel[!(hlabel %in% c("70+", "80+", "90+"))]
        hlabel <- paste(hlabel, hmin, sep="")
     } else {  # it is possible to have no winning hand, always split hand
       if (hmin == "None" ) {
@@ -222,13 +255,6 @@ handstats <- function(rawstat, split = FALSE) {
         hlabel <- c("MainWon", hlabel)
       } # can't lose check.
     } # end of spots check
-    nc <- nchar(hmin) + 2
-    whand[nchar(whand) == nc & 
-          !(whand %in% c("MainWon"))] <- paste("9-", hmin, sep="")
-    nc <- nchar(hmin) + 3
-    whand[nchar(whand) == nc &
-          !(whand %in% c("MainWon"))] <- paste(substr(whand[nchar(whand) == nc],1,1),
-                                               "0+", hmin, sep="")
   } else { # uses more normal hand order
     hlabel <- c( "7-High", "8-High", "9-High", "10-High",
                  "J-High", "Q-High", "K-High", "A-High",
@@ -360,7 +386,7 @@ handstats <- function(rawstat, split = FALSE) {
 
 #####
 #debug code 
-#print(c(rownames(game), players, rawstat$wcdeck[1]))
+# print(c(rownames(game), players, rawstat$wcdeck[1]))
 
   list(pctwin <- ptable, cntwin <- wtable, wcwin <- wctable) 
 } # end of internal function handstats
@@ -450,13 +476,13 @@ wpstats <- function(ngame, players, wcards = NULL, numdeal = 1000, seed = 52,
                  "mppct", "sppct", "bppct" )] <- pgame[["detail"]]
   } # end of numdeal loop
 ## Debug code ###
-#  assign("debugraw", rawstat, envir = .GlobalEnv)
+# assign("debugraw", rawstat, envir = .GlobalEnv)
 #################
   if (raw) {
     rawstat
   } else {
     gstat[["stats"]]["wcdeck"] <- rawstat$wcdeck[1]
-    hstat <- handstats(rawstat, split = FALSE)
+    hstat <- iwphandstats(rawstat, split = FALSE)
     gstat$pmain <- hstat[1]
     gstat$cmain <- hstat[2]
     gstat$wmain <- hstat[3]
@@ -464,7 +490,7 @@ wpstats <- function(ngame, players, wcards = NULL, numdeal = 1000, seed = 52,
       hstat <- c("", "", "", "")
       potpct <- table(rawstat$mppct)/numdeal 
     } else { # load the split data & work out pot percent
-      hstat <- handstats(rawstat, split = TRUE)
+      hstat <- iwphandstats(rawstat, split = TRUE)
       potval <- rawstat[rawstat$mppct == 0 & 
                         rawstat$sppct == 0, "mppct"]
       rawstat[rawstat$bppct > 0, c("mppct","sppct")] <- 0
@@ -545,8 +571,8 @@ iwpgcreatedb <- function(pokerdb = NULL, gamelist = rownames(iwpgames),
            eval(parse(text=refcmd))
          } # end skip if it has already been calculated
 ## Debug code ###
-## assign("debugdb", pokerdb, envir = .GlobalEnv)
-## save(list = c("debugdb", "debugraw", "debughand"), file = "data/debugdb.rda")
+# assign("debugdb", pokerdb, envir = .GlobalEnv)
+# save(list = c("debugdb", "debugraw", "debughand"), file = "data/debugdb.rda")
 #################
       } # end loop through wildcards
     } # end loop through players
@@ -556,7 +582,7 @@ iwpgcreatedb <- function(pokerdb = NULL, gamelist = rownames(iwpgames),
 
 ################################################################################## 
 wpgraphs <- function(gstat = NULL, ngame = NULL, players = NULL, wcnum = NULL,
-                     stats = FALSE) {
+                     stats = FALSE, gtype = "Default", split = "Vertical") {
   #  This function generates graphs from a gstat object, or tries to match
   #  ngame/player/wcnum input to a row in the wpgamestats list
   #
@@ -569,7 +595,13 @@ wpgraphs <- function(gstat = NULL, ngame = NULL, players = NULL, wcnum = NULL,
   #     players: used only if gstat is null, number of players
   #     wcnum:   used only if gstat is null, number of wildcards added
   #     stats:   if TRUE the function returns the gstat parameter or 
-  #              the gstat list from iwpgamestats instead of graphs   
+  #              the gstat list from iwpgamestats instead of graphs 
+  #     gtype:   "Default" returns a 4x4 grid with rich information
+  #              "Confidence" returns either 1x1 (no split) or 1x2 (split)
+  #                           with just the confidence graphs
+  #              "Hands" returns either 1x1 (no split) or 1x2 (split)
+  #                           with only the count of hands graphs
+  #     split:   Split graphs stack "Vertical" (default) or "Horizontal"  
   #
   #  Returns:  
   #     if gstat is NULL and stats is TRUE, returns the precalculated 
@@ -588,7 +620,9 @@ wpgraphs <- function(gstat = NULL, ngame = NULL, players = NULL, wcnum = NULL,
 
   # Validate parameters
   if (is.null(gstat)) {
-    game <- gsub(" ", ".", ngame, fixed = TRUE)
+    sgame <- iwpsupportedgames[ngame,]$Stats.Game
+    sgame <- ifelse(is.na(sgame),ngame, sgame)
+    game <- gsub(" ", ".", sgame, fixed = TRUE)
     game <- gsub("-", ".", game, fixed = TRUE)
     game <- gsub("(", ".", game, fixed = TRUE)
     game <- gsub(")", ".", game, fixed = TRUE)
@@ -597,93 +631,139 @@ wpgraphs <- function(gstat = NULL, ngame = NULL, players = NULL, wcnum = NULL,
       gstat <-  iwpgamestats[[gameref]]
     } else { #exit with error
       # ngame not supported
-      if (sum(rownames(iwpgames) == ngame) != 1) {
+      if (sum(rownames(iwpgames) == sgame) != 1) {
         print(c("Supported Games:"))
-        print(rownames(iwpgames))
+        print(sort(rownames(iwpsupportedgames)))
         stop(c("ngame parameter: ", ngame, " is not supported"))
       } # end game parameter validation check
-      # player not supported
-      ng <- names(iwpgamestats[grep(game, names(iwpgamestats))])
-      np <- unique(substring(ng,nchar(ng)-2,nchar(ng)-2))
-      if (length(grep(players, np)) != 1) {
-        stop(paste("players parameter: ", players, " must be in",
-             paste(np, collapse=","))) 
-      } # end players parameter validation check
-      # number of wildcards not supported
-      nw <- unique(substring(ng,nchar(ng),nchar(ng)))
-      if (length(grep(wcnum, nw)) != 1) {
-        stop(paste("wcnum parameter: ", wcnum, " must be in",
-             paste(nw, collapse=","))) 
-      } # end wcnum parameter validation check
       # outside error trap, should never be called
-      print("Valid game not pre-calculated")
-      print(paste("ngame   =", ngame))
-      print(paste("players =", players))
-      print(paste("wcnum   =", wcnum))
+      print("Supported game chosen but parameters not in pre-calculated list")
+      print(paste("    ngame   =", ngame))
+      print(paste("    players =", players))
+      print(paste("    wcnum   =", wcnum))
+      print("Use the following command to attempt manual generation:")
+      if (is.null(wcnum)) {
+      print("    wpgraph(wpstats(ngame, players))")
+      } else {
+      print("    wpgraph(wpstats(ngame, players, wcards = c(your wildcard choices)))")
+      } # end wildcard check
       stop(paste("game reference", gameref, "not found in iwpgamestats"))     
     } # end name/player/wc check
   } # end gstat null check
+  if (!is.list(gstat)) {
+    if (is.null(gstat)) {
+      print("If gstat parameter is null, the program requires")
+      print("ngame, players and wcnum parameters to be not null")
+      stop("Usage: wpgraphs(gstat, ngame, players, wcnum, gtype)")
+    } else {
+      print(gstat)
+      stop("incorrect gstat format - must be a list")
+    }
+  } # not list test
   if (length(gstat$pmain) == 0 | length(gstat$cmain) == 0 |
       length(gstat$wmain) == 0 | length(gstat$psplit) == 0 |
       length(gstat$csplit) == 0 | length(gstat$wsplit) == 0 |
-      length(gstat$potpct) == 0) {
+      length(gstat$potpct) == 0 ) {
     print(gstat)
     stop("incorrect gstat format")
   } # end gstat format check
   if (stats) {
     return(gstat)
   } # return the gstat object, not a set of graphs
+  if (is.null(ngame)) {
+    ngame <- gstat$game["ngame"]
+  } # end ngame check
   # the max # of cards for a given hand is used to scale count graphs
   # the wildcard matrix will have 1-2 rows, grab the largest from each
   maxcard <- 0
   for (i in 1:dim(gstat$cmain[[1]])[1]) {
     maxcard <- maxcard + max(gstat$cmain[[1]][i, ])
   } # end of maxcard
-
-  # light green for first color, then a heatmap showing that there are
+  # set the base color for the graph, the default pot is 100% won
+  basecol <- "dimgrey"
+  # use basecol for first color, then a heatmap showing that there are
   # rival hands likely with 2 or more competitors, red = tied hand
-  gcolor <- rev(heat.colors(dim(gstat$pmain[[1]])[1]-1, alpha = .5))
-  gcolor <- c(rainbow(1, start=.2), gcolor)
-  par(las=2, mfcol = c(2,2), mar = c(5,4,2,2))
-  barplot(as.matrix(gstat$pmain[[1]]), ylab = "Confidence", col=gcolor,
-           main = gstat[["game"]]["ngame"], ylim = c(0,1.09))
-  abline(h=.2)
-  abline(h=.4)
-  abline(h=.6)
-  abline(h=.8)
-  abline(h=1)
-  legend(x="topleft", legend = rev(rownames(as.matrix(gstat$pmain[[1]]))), 
-         fill=rev(gcolor), cex=.6, bg="white")
-  text(x=dim(as.matrix(gstat$pmain[[1]]))[2] * .7,
-       y=1.055,label="Confidence: Main Hand", col = "Black")
-  barplot(as.matrix(gstat$cmain[[1]]), ylab = "Hands Won", col=gcolor,
-          main = paste(gstat[["game"]]["players"], "players &", 
-          gstat[["stats"]]["wcdeck"], "wildcards"), ylim = c(0, maxcard*1.2))
-  legend(x="topleft", legend = rev(rownames(as.matrix(gstat$pmain[[1]]))), 
-         fill=rev(gcolor), cex=.6, bg="white")
-  text(x=dim(as.matrix(gstat$cmain[[1]]))[2] * .7,
-       y=maxcard*1.1,label="Hands Won: Main Hand", col = "Black")
-  gsub   <- paste(gstat[["stats"]]["numdeal"], 
-            "hands,  seed =", gstat[["stats"]]["seed"])     
-  if (as.matrix(gstat$psplit[[1]])[1,1] == "") {
-    pcolor <- rev(heat.colors(length(gstat$potpct)-1, alpha = .5))
-    pcolor <- rev(c(rainbow(1, start=.2), pcolor))
-    barplot(gstat$potpct, ylab = "Confidence", col = pcolor,
-            main = "No Split Hand", ylim = c(0,1.09))
-    text(x=length(gstat$potpct) * .7,
-         y=1.055,label="Percentage of Pot Won", col = "Black")
-    wcolor <- rainbow(dim(as.matrix(gstat$wmain[[1]]))[1], start = .6)
-    barplot(as.matrix(gstat$wmain[[1]]), ylab = "Hands Won", col=wcolor,
-         ylim = c(0, maxcard*1.2), main = gsub)
-    legend(x="topleft", legend = rev(rownames(as.matrix(gstat$wmain[[1]]))), 
-           fill=rev(wcolor), cex=.6, bg="white")
-    text(x=dim(as.matrix(gstat$wmain[[1]]))[2] * .7,
-         y=maxcard*1.1,label="Hands Won: # Wildcards", col = "Black")
+  gcolor <- rev(heat.colors(dim(gstat$pmain[[1]])[1]-1, alpha = 1))
+  gcolor <- c(basecol, gcolor)
+  if (gtype == "Default") {
+    par(las=2, mfcol = c(2,2), mar = c(5,4,2,2), bg = "snow2")
   } else {
-    maxcard <- 0
-    for (i in 1:dim(gstat$csplit[[1]])[1]) {
-      maxcard <- maxcard + max(gstat$csplit[[1]][i, ])
-    } # end of maxcard
+    if (as.matrix(gstat$psplit[[1]])[1,1] == "") {
+        par(las=2, mfcol = c(1,1), mar = c(6,4,2,2), bg = "snow2")
+    } else {
+       if (split == "Horizontal" ) {
+        par(las=2, mfcol = c(1, 2), mar = c(6,4,2,2), bg = "snow2")
+       } else {
+        par(las=2, mfcol = c(2, 1), mar = c(6,4,2,2), bg = "snow2")
+       } # end check for horizontal/vertical split
+    } # end check for split
+  } # end par settings by graph type
+
+  stat1  <- paste(gstat[["game"]]["players"], "players &",
+            gstat[["stats"]]["wcdeck"], "wildcards")
+
+  stat2  <- paste(gstat[["stats"]]["numdeal"], 
+            "hands - seed =", gstat[["stats"]]["seed"])
+
+  stat3 <- c(paste(stat1,"-", stat2))
+
+  if (gtype == "Default" | gtype == "Confidence") {
+    if (gtype == "Default") {
+      gmain <- ngame
+      gsub <- "Confidence: Main Hand"
+    } else {
+      gmain <- paste(ngame," - Main Hand Confidence")
+      gsub <- stat3
+    } # end labels check
+    barplot(as.matrix(gstat$pmain[[1]]), ylab = "Confidence", col=gcolor,
+            main = gmain, ylim = c(0,1.09), border = NA)
+    abline(h=.2, col = basecol)
+    abline(h=.4, col = basecol)
+    abline(h=.6, col = basecol)
+    abline(h=.8, col = basecol)
+    abline(h=1, col = basecol)
+    legend(x="right", legend = rev(rownames(as.matrix(gstat$pmain[[1]]))), 
+           fill=rev(gcolor), cex=.7, bg="white")
+    text(x=dim(as.matrix(gstat$pmain[[1]]))[2] * .7,
+         y=1.055,label=gsub, col = "Black")
+  } # end draw main confidence graph
+
+  if (gtype == "Default" | gtype == "Hands") {
+    if (gtype == "Default") {
+      gmain <- stat1
+      gsub <- "Hands Won: Main Hand"
+    } else {
+      gmain <- paste(ngame," - Hands Won Main")
+      gsub <- stat3
+    } # end labels check
+    barplot(as.matrix(gstat$cmain[[1]]), ylab = "Hands Won", col=gcolor,
+            main = gmain, ylim = c(0, maxcard*1.2),
+            border = NA)
+    legend(x="right", legend = rev(rownames(as.matrix(gstat$cmain[[1]]))), 
+           fill=rev(gcolor), cex=.7, bg="white")
+    text(x=dim(as.matrix(gstat$cmain[[1]]))[2] * .8,
+         y=maxcard*1.1,label=gsub, col = "Black")
+
+  } # end draw main Hands graph 
+
+  if (as.matrix(gstat$psplit[[1]])[1,1] == "") {
+    if (gtype == "Default") {
+      pcolor <- rev(heat.colors(length(gstat$potpct)-1, alpha = .5))
+      pcolor <- rev(c(basecol, pcolor))
+      barplot(gstat$potpct, ylab = "Confidence", col = pcolor,
+              main = "No Split Hand", ylim = c(0,1.09), border = NA)
+      text(x=length(gstat$potpct) * .7,
+           y=1.055,label="Percentage of Pot Won", col = "Black")
+      wcolor <- rainbow(dim(as.matrix(gstat$wmain[[1]]))[1], start = .6)
+      barplot(as.matrix(gstat$wmain[[1]]), ylab = "Hands Won", col=wcolor,
+           ylim = c(0, maxcard*1.2), main = stat2, border = NA)
+      legend(x="right", legend = rev(rownames(as.matrix(gstat$wmain[[1]]))), 
+             fill=rev(wcolor), cex=.8, bg="white")
+      text(x=dim(as.matrix(gstat$wmain[[1]]))[2] * .7,
+           y=maxcard*1.1,label="Hands Won: # Wildcards", col = "Black")
+    } # if not Default type, these graphs aren't drawn
+  } else {
+    # split hands generate interest in normal % of pot won
     pctpot <- rev(sort(round(gstat$potpct,3)))
     pctlab <- names(pctpot)
     potlab <- paste(pctlab, "(", pctpot, ")", sep="")
@@ -691,23 +771,54 @@ wpgraphs <- function(gstat = NULL, ngame = NULL, players = NULL, wcnum = NULL,
       potlab <- potlab[1:3]
     } # end large number of pots check
     potlab <- paste(potlab, collapse=", ")
-    barplot(as.matrix(gstat$psplit[[1]]), ylab = "Confidence", col=gcolor,
-            main = paste("%Pot", potlab), ylim = c(0,1.09))
-    abline(h=.2)
-    abline(h=.4)
-    abline(h=.6)
-    abline(h=.8)
-    abline(h=1)
-    legend(x="topleft", legend = rev(rownames(as.matrix(gstat$pmain[[1]]))), 
-           fill=rev(gcolor), cex=.6, bg="white")
-    text(x=dim(as.matrix(gstat$psplit[[1]]))[2] * .7,
-         y=1.055,label="Confidence: Split Hand", col = "Black")
-    barplot(as.matrix(gstat$csplit[[1]]), ylab = "Hands Won", col=gcolor,
-         ylim = c(0, maxcard*1.2), main = gsub)
-    legend(x="topleft", legend = rev(rownames(as.matrix(gstat$pmain[[1]]))), 
-           fill=rev(gcolor), cex=.6, bg="white")
-    text(dim(as.matrix(gstat$psplit[[1]]))[2] * .7,
-         y=maxcard*1.1,label="Hands Won: Split Hand", col = "Black")
+    # split hand may have entries with no actual values
+    scidx <- NULL
+    for (i in 1:dim(gstat$psplit[[1]])[1]) {
+      if (sum(gstat$psplit[[1]][i,]) > 0) {
+       scidx <- c(scidx, rownames(gstat$psplit[[1]][i,]))
+      } # end of test rows for values
+    } # end of loop through psplit rows
+    scolor <- rev(heat.colors(length(scidx)-1, alpha = 1))
+    scolor <- c(basecol, scolor)
+    if (gtype == "Default" | gtype == "Confidence") {
+      maxcard <- 0
+      for (i in 1:dim(gstat$csplit[[1]])[1]) {
+        maxcard <- maxcard + max(gstat$csplit[[1]][i, ])
+      } # end of maxcard
+      if (gtype == "Default") {
+        gmain <- paste("%Pot", potlab)
+        gsub <- "Confidence: Split Hand"
+      } else {
+        gmain <- paste(ngame," - Split Hand Confidence")
+        gsub <- paste("%Pot", potlab)
+      } # end labels check
+      barplot(as.matrix(gstat$psplit[[1]]), ylab = "Confidence", col=scolor,
+              main = gmain, ylim = c(0,1.09), border = NA)
+      abline(h=.2, col = basecol)
+      abline(h=.4, col = basecol)
+      abline(h=.6, col = basecol)
+      abline(h=.8, col = basecol)
+      abline(h=1, col = basecol)
+      legend(x="right", legend = rev(scidx), 
+             fill=rev(scolor), cex=.8, bg="white")
+      text(x=dim(as.matrix(gstat$psplit[[1]]))[2] * .7,
+           y=1.055,label=gsub, col = "Black")
+    } # end draw Split Confidence graph   
+    if (gtype == "Default" | gtype == "Hands") {
+      if (gtype == "Default") {
+        gmain <- stat2
+        gsub <- "Hands Won: Split Hand"
+      } else {
+        gmain <- paste(ngame," - Hands Won Split")
+        gsub <- paste("%Pot", potlab)
+      } # end labels check
+      barplot(as.matrix(gstat$csplit[[1]]), ylab = "Hands Won", col=scolor,
+           ylim = c(0, maxcard*1.2), main = gmain, border = NA)
+      legend(x="right", legend = rev(scidx), 
+             fill=rev(scolor), cex=.8, bg="white")
+      text(dim(as.matrix(gstat$csplit[[1]]))[2] * .7,
+         y=maxcard*1.1,label=gsub, col = "Black")
+    } # end draw Split Hands graph   
   } # end of split hand check
 
 } # end of public function wpgraphs

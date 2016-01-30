@@ -20,7 +20,6 @@ rowname = name of the game (ngame parameter, eg, "Pineapple")
   }
 Issue codes, in rough order of difficulty to add to existing logic
   \enumerate{
-    \item \bold{use <game>}    = use a supported game that is statistically same as this game
     \item \bold{strip}        = Need to discard cards from deck before dealing
     \item \bold{wild logic}   = additional wildcard logic required
     \item \bold{graphs}       = change scale of grouping logic for graphs
@@ -39,5 +38,5 @@ Issue codes, in rough order of difficulty to add to existing logic
 primary source for games rules not encountered in my own play.
 
 }
-\seealso{\code{\link{wpsupportedgames}}}
+\seealso{\code{\link{wprules}}, \code{\link{wpsupportedgames}}}
 \keyword{datasets}
